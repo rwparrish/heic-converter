@@ -2,6 +2,7 @@ from pathlib import Path
 from pillow_heif import register_heif_opener
 from PIL import Image
 from PIL.ExifTags import TAGS
+from fractions import Fraction
 
 register_heif_opener()
 
@@ -46,12 +47,32 @@ def get_gps_coordinates(img: Image.Image) -> tuple[float, float] | None:
         if exif is None:
             return None
             
-        # Get the nested GPS info
-        gps_info = exif.get_ifd(34853)  # 34853 is the GPS IFD tag
-        print("\nGPS Info structure:")
-        print(gps_info)
+        gps_info = exif.get_ifd(34853)
+        if not gps_info:
+            return None
+            
+        # Convert fractions to decimal degrees
+        def convert_to_decimal(value):
+            if isinstance(value, tuple):
+                # Handle degree/minute/second format
+                return value[0] + value[1]/60 + value[2]/3600
+            elif isinstance(value, Fraction):
+                # Handle Fraction objects
+                return float(value)
+            elif '/' in str(value):
+                # Handle fraction strings
+                num, denom = map(float, str(value).split('/'))
+                return float(num/denom)
+            return float(value)
+            
+        lat = convert_to_decimal(gps_info[2])
+        if gps_info[1] == 'S': lat = -lat
+            
+        lon = convert_to_decimal(gps_info[4])
+        if gps_info[3] == 'W': lon = -lon
         
-        breakpoint()
+        print(f"Decimal coordinates: {float(lat):.6f}, {float(lon):.6f}")
+        return (lat, lon)
         
     except Exception as e:
         print(f"Error reading GPS data: {e}")
