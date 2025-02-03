@@ -3,64 +3,64 @@ from pillow_heif import register_heif_opener
 from PIL import Image
 from PIL.ExifTags import TAGS
 
-# Register HEIF opener with Pillow
 register_heif_opener()
 
-def print_exif_data(dir_path):
-    #create list of images
-    images = [image for image in Path(dir_path).glob("*.HEIC")]
-    """Helper function to print EXIF data in a readable format"""
-    for image in images:
-        with Image.open(image) as img:
-            exif_data = img.getexif()
-            if exif_data is None:
-                print("No EXIF data found")
-                return
-                
-            print("\nEXIF data:")
-            for tag_id in exif_data:
-                tag = TAGS.get(tag_id, tag_id)
-                data = exif_data.get(tag_id)
-                if isinstance(data, bytes):
-                    data = data.decode()
-                print(f"{tag}: {data}")
 
 def convert_to_jpg(folder_path: str) -> None:
     """
     Validate and convert HEIC files in the specified directory to JPG format.
-    
+
     Args:
         folder_path (str): Path to the folder containing HEIC files
-        
+
     Raises:
         ValueError: If the path doesn't exist or isn't a directory
     """
     # Convert string path to Path object for easier handling
     path = Path(folder_path)
-    
-    
+
     # Check if path exists
     if not path.exists():
         raise ValueError(f"The path {folder_path} does not exist")
-        
+
     # Check if it's a directory
     if not path.is_dir():
         raise ValueError(f"The path {folder_path} is not a directory")
-    
+
     # Get all HEIC files in the directory
     heic_files = list(path.glob("*.HEIC")) + list(path.glob("*.heic"))
+    image = Image.open(heic_files[0])
+    get_gps_coordinates(image)
+    # for file in heic_files:
+    #     image = Image.open(file)
+    #     image.save(file.with_suffix(".jpg"), "JPEG", quality=95)  # Quality ranges from 1 (worst) to 95 (best)
+    #     print(f"Converted {file} to {file.with_suffix('.jpg')}")
+       
     
-    if heic_files:
-        # Let's examine EXIF data from the first file
-        print_exif_data(heic_files[0])
+def get_gps_coordinates(img: Image.Image) -> tuple[float, float] | None:
+    """
+    Extract GPS coordinates from an opened image.
+    """
+    try:
+        exif = img.getexif()
+        if exif is None:
+            return None
+            
+        # Get the nested GPS info
+        gps_info = exif.get_ifd(34853)  # 34853 is the GPS IFD tag
+        print("\nGPS Info structure:")
+        print(gps_info)
         
-    breakpoint()
-
+        breakpoint()
+        
+    except Exception as e:
+        print(f"Error reading GPS data: {e}")
+        return None
+    
 
 if __name__ == "__main__":
-    test_path = "/Volumes/T7/convert-from-heic"  
+    test_path = "/Volumes/T7/convert-from-heic"
     try:
-        print_exif_data(test_path)
         convert_to_jpg(test_path)
     except ValueError as e:
         print(f"Error: {e}")
