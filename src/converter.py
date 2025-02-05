@@ -32,11 +32,15 @@ def convert_to_jpg(folder_path: str) -> None:
     heic_files = list(path.glob("*.HEIC")) + list(path.glob("*.heic"))
     image = Image.open(heic_files[0])
     get_gps_coordinates(image)
-    # for file in heic_files:
+    count = 0
+    for file in heic_files:
+        count += 1
+    
     #     image = Image.open(file)
     #     image.save(file.with_suffix(".jpg"), "JPEG", quality=95)  # Quality ranges from 1 (worst) to 95 (best)
     #     print(f"Converted {file} to {file.with_suffix('.jpg')}")
-       
+    
+    print(f"Total files: {count}")
     
 def get_gps_coordinates(img: Image.Image) -> tuple[float, float] | None:
     """
